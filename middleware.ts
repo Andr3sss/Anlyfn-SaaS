@@ -14,7 +14,7 @@ export async function middleware(request: NextRequest) {
   const isSubdomain =
     hostname !== baseDomain &&
     hostname !== `www.${baseDomain}` &&
-    hostname.endsWith(`.${baseDomain.split(':')[0]}`) &&
+    hostname.endsWith(`.${baseDomain}`) &&
     !hostname.startsWith('www.')
 
   if (isSubdomain) {
