@@ -54,3 +54,17 @@ export interface MenuItem {
   is_highlighted: boolean
   section_id: string
 }
+
+// Tipo extendido para clientes con módulos incluidos
+export interface ClientWithModules extends Client {
+  modules: Module | null
+}
+
+// Tipo para métricas del dashboard
+export interface DashboardMetrics {
+  totalClients: number
+  activeSites: number
+  totalProducts: number
+  totalModules: number
+}
+
