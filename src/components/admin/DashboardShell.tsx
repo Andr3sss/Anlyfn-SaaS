@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Users, Globe, Package, TrendingUp,
   Search, Bell, Plus, ChevronRight
@@ -20,7 +21,7 @@ interface DashboardShellProps {
 export function DashboardShell({
   clients, metrics
 }: DashboardShellProps) {
-  const [activeSection, setActiveSection] = useState('dashboard')
+  const router = useRouter()
   const [selectedClientId, setSelectedClientId] = useState<string | null>(clients[0]?.id ?? null)
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -72,10 +73,7 @@ export function DashboardShell({
       className="flex h-screen w-screen overflow-hidden"
       style={{ background: '#020F16' }}
     >
-      <AdminSidebar
-        activeSection={activeSection}
-        onNavigate={setActiveSection}
-      />
+      <AdminSidebar />
 
       <main className="flex-1 overflow-y-auto">
         <div style={{ padding: '28px 32px' }}>
@@ -155,6 +153,7 @@ export function DashboardShell({
 
               {/* New client */}
               <button
+                onClick={() => router.push('/admin/clients/new')}
                 className="flex items-center gap-2 rounded-xl
                            transition-all duration-200"
                 style={{
@@ -199,6 +198,7 @@ export function DashboardShell({
               </span>
             </div>
             <button
+              onClick={() => router.push('/admin/clients')}
               className="flex items-center gap-1
                          hover:text-[#4A8FA3] transition-colors"
               style={{ fontSize: '11px', color: '#1E4D5C' }}

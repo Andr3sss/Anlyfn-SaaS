@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import {
   Eye, Pen, Globe, Zap,
   CircleCheck, CircleX
@@ -15,6 +16,7 @@ interface ClientDetailProps {
 }
 
 export function ClientDetail({ client }: ClientDetailProps) {
+  const router = useRouter()
   const modulesObj = client.modules as Record<string, unknown> | null
   const activeCount = countActiveModules(modulesObj)
   const { active: activeKeys, inactive: inactiveKeys } =
@@ -71,6 +73,11 @@ export function ClientDetail({ client }: ClientDetailProps) {
         {/* Action buttons */}
         <div className="flex items-center gap-2">
           <button
+            onClick={() => {
+              const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? 'localhost:3000'
+              const storefrontUrl = `http://${client.subdomain}.${baseDomain}`
+              window.open(storefrontUrl, '_blank')
+            }}
             className="flex items-center gap-2 rounded-xl
                        transition-all duration-200 hover:opacity-80"
             style={{
@@ -84,6 +91,7 @@ export function ClientDetail({ client }: ClientDetailProps) {
             Ver storefront
           </button>
           <button
+            onClick={() => router.push(`/admin/clients/${client.id}`)}
             className="flex items-center gap-2 rounded-xl
                        transition-all duration-200 hover:opacity-90"
             style={{
