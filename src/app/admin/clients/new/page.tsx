@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { NewClientForm } from '@/components/admin/NewClientForm'
 
 export default async function NewClientPage() {
   const supabase = await createClient()
@@ -10,23 +11,8 @@ export default async function NewClientPage() {
     <div style={{
       minHeight: '100vh',
       background: '#020F16',
-      color: '#E8F6FA',
-      fontFamily: 'system-ui',
-      padding: '40px',
     }}>
-      <h1 style={{ fontSize: '20px', marginBottom: '8px' }}>
-        Nuevo cliente
-      </h1>
-      <p style={{ color: '#4A8FA3', fontSize: '13px' }}>
-        Formulario completo se construye en Fase 4B
-      </p>
-      <a
-        href="/admin"
-        style={{ display: 'block', marginTop: '24px',
-                 color: '#0A7B9E', fontSize: '12px' }}
-      >
-        ← Volver al dashboard
-      </a>
+      <NewClientForm />
     </div>
   )
 }

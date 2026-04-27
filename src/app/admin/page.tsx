@@ -14,27 +14,7 @@ export default async function AdminPage() {
   const { data: clientsRaw, error: clientsError } =
     await supabase
       .from('clients')
-      .select(`
-        id,
-        name,
-        subdomain,
-        slug,
-        active,
-        created_at,
-        logo_url,
-        primary_color,
-        secondary_color,
-        font,
-        whatsapp,
-        custom_domain,
-        modules (
-          id, client_id,
-          announcement_bar, navigation_menu, hero_section,
-          product_catalog, whatsapp_button, contact_form,
-          gallery, about_section, reviews_section,
-          paypal_button, footer
-        )
-      `)
+      .select('*, modules (*)')
       .order('created_at', { ascending: false })
 
   if (clientsError) {
