@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
 
 export async function GET(
   _request: Request,
@@ -58,6 +59,17 @@ export async function PUT(
     if (moduleError) {
       return NextResponse.json({ error: moduleError.message }, { status: 500 })
     }
+  }
+
+  // Invalidar caché del storefront del cliente
+  const { data: clientRow } = await supabase
+    .from('clients')
+    .select('subdomain')
+    .eq('id', id)
+    .single()
+
+  if (clientRow?.subdomain) {
+    revalidateTag(`storefront-${clientRow.subdomain}`, 'max')
   }
 
   return NextResponse.json({ success: true })
