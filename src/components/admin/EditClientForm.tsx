@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import Link from 'next/link'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient as createSupabaseClient } from '@/lib/supabase/client'
+import { uploadImage } from '@/lib/upload-image'
 import {
   ArrowLeft, ChevronDown, ChevronRight,
   Upload, Check, AlertCircle, Loader2,
@@ -191,8 +193,8 @@ export function EditClientForm({ client }: { client: ClientWithModules }) {
       setErrors(prev => ({ ...prev, logo: 'Formato no soportado (solo PNG, JPG, WEBP)' }))
       return
     }
-    if (file.size > 2 * 1024 * 1024) {
-      setErrors(prev => ({ ...prev, logo: 'La imagen excede los 2MB permitidos' }))
+    if (file.size > 10 * 1024 * 1024) {
+      setErrors(prev => ({ ...prev, logo: 'La imagen no puede superar 10MB' }))
       return
     }
 
@@ -203,19 +205,9 @@ export function EditClientForm({ client }: { client: ClientWithModules }) {
     setFormData(prev => ({ ...prev, logo_url: objectUrl }))
 
     try {
-      const supabase = createSupabaseClient()
-      const filename = `logos/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-      const { error } = await supabase.storage
-        .from('client-assets')
-        .upload(filename, file, { upsert: true })
+      const publicUrl = await uploadImage(file, 'client-assets', 'logos')
 
-      if (error) throw error
-
-      const { data: urlData } = supabase.storage
-        .from('client-assets')
-        .getPublicUrl(filename)
-
-      setFormData(prev => ({ ...prev, logo_url: urlData.publicUrl }))
+      setFormData(prev => ({ ...prev, logo_url: publicUrl }))
     } catch {
       setErrors(prev => ({ ...prev, logo: 'Error al subir la imagen' }))
       setFormData(prev => ({ ...prev, logo_url: client.logo_url ?? '' }))
@@ -288,7 +280,7 @@ export function EditClientForm({ client }: { client: ClientWithModules }) {
         setIsDeleteDialogOpen(false)
         // Redirigir después de 1s para permitir al usuario ver el estado de éxito (opcional, pero pedido en fase)
         setTimeout(() => {
-          router.push('/admin')
+          router.push('/admin/clients')
         }, 800)
       } else {
         const data = await res.json()
@@ -344,15 +336,20 @@ export function EditClientForm({ client }: { client: ClientWithModules }) {
       {/* ── Topbar ── */}
       <div className="sticky top-0 z-10 px-8 py-5 flex justify-between items-center bg-[#020F16]/90 backdrop-blur border-b border-[#0A7B9E]/10">
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.push('/admin')}
-            className="text-[#1E4D5C] hover:text-[#7BBFD6] transition-colors"
+          <Link
+            href="/admin/clients"
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-[#1E4D5C] transition-colors hover:bg-[#0A7B9E]/10 hover:text-[#7BBFD6]"
           >
             <ArrowLeft size={18} />
-          </button>
+          </Link>
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-[10px] tracking-[2px] text-[#1E4D5C] font-medium uppercase">Clientes</span>
+              <Link
+                href="/admin/clients"
+                className="text-[10px] tracking-[2px] text-[#1E4D5C] font-medium uppercase transition-colors hover:text-[#7BBFD6]"
+              >
+                Clientes
+              </Link>
               <ChevronRight size={10} className="text-[#1E4D5C]" />
               <span className="text-[10px] tracking-[2px] text-[#4A8FA3] font-medium uppercase truncate max-w-[160px]">{client.name}</span>
             </div>
@@ -424,12 +421,13 @@ export function EditClientForm({ client }: { client: ClientWithModules }) {
                   <>
                     <Upload size={24} className="text-[#4A8FA3] mb-2" />
                     <span className="text-sm text-[#7BBFD6]">Haz clic para reemplazar el logo</span>
-                    <span className="text-xs text-[#1E4D5C] mt-1">PNG, JPG, WEBP (Max 2MB)</span>
+                    <span className="text-xs text-[#1E4D5C] mt-1">PNG, JPG, WEBP (Max 10MB)</span>
                   </>
                 )}
                 {uploadingLogo && (
-                  <div className="absolute inset-0 bg-[#020F16]/80 flex items-center justify-center">
-                    <Loader2 size={24} className="text-[#0A7B9E] animate-spin" />
+                  <div className="absolute inset-0 bg-[#020F16]/80 flex flex-col items-center justify-center">
+                    <Loader2 size={24} className="text-[#0A7B9E] animate-spin mb-2" />
+                    <span className="text-xs text-[#7BBFD6] font-medium">Comprimiendo imagen...</span>
                   </div>
                 )}
                 {formData.logo_url && !uploadingLogo && (

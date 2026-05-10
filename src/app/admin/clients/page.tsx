@@ -1,58 +1,35 @@
 import { redirect } from 'next/navigation'
+import { ClientsDirectory } from '@/components/admin/ClientsDirectory'
 import { createClient } from '@/lib/supabase/server'
+import type { ClientWithModules } from '@/types/database'
 
 export default async function ClientsPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   if (!user) redirect('/login')
 
-  const { data: clients } = await supabase
+  const { data: clientsRaw, error } = await supabase
     .from('clients')
-    .select('id, name, subdomain, active')
+    .select('*, modules (*)')
     .order('created_at', { ascending: false })
 
+  if (error) {
+    console.error('Error fetching clients for directory:', error)
+  }
+
+  const clients = (clientsRaw ?? []).map((client) => ({
+    ...client,
+    modules: Array.isArray(client.modules)
+      ? (client.modules[0] ?? null)
+      : (client.modules ?? null),
+  })) as ClientWithModules[]
+
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#020F16',
-      color: '#E8F6FA',
-      fontFamily: 'system-ui',
-      padding: '40px',
-    }}>
-      <h1 style={{ fontSize: '20px', marginBottom: '8px' }}>
-        Todos los clientes
-      </h1>
-      <p style={{ color: '#4A8FA3', fontSize: '13px',
-                  marginBottom: '32px' }}>
-        {clients?.length ?? 0} registros · Diseño completo en Fase 4B
-      </p>
-      <div style={{ display: 'flex', flexDirection: 'column',
-                    gap: '8px' }}>
-        {clients?.map(c => (
-          <a
-            key={c.id}
-            href={`/admin/clients/${c.id}`}
-            style={{
-              padding: '12px 16px',
-              background: '#040E16',
-              border: '1px solid rgba(10,123,158,0.15)',
-              borderRadius: '10px',
-              color: '#C8E8F0',
-              textDecoration: 'none',
-              fontSize: '13px',
-            }}
-          >
-            {c.name} — {c.subdomain}
-          </a>
-        ))}
-      </div>
-      <a
-        href="/admin"
-        style={{ display: 'block', marginTop: '24px',
-                 color: '#0A7B9E', fontSize: '12px' }}
-      >
-        ← Volver al dashboard
-      </a>
-    </div>
+    <ClientsDirectory
+      clients={clients}
+    />
   )
 }

@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient as createSupabaseClient } from '@/lib/supabase/client'
+import { uploadImage } from '@/lib/upload-image'
 import {
   ArrowLeft, ChevronDown, ChevronRight,
   Upload, Check, AlertCircle, Loader2,
   Building2, Palette, Type, Globe,
-  Share2, Search, Settings2, ImageIcon
+  Share2, Search, Settings2
 } from 'lucide-react'
 import {
   FONT_OPTIONS, FONT_SIZE_OPTIONS, LETTER_SPACING_OPTIONS,
@@ -117,10 +118,13 @@ export function NewClientForm() {
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const logoInputRef = useRef<HTMLInputElement>(null)
 
-  const handleInputChange = (field: keyof FormState, value: any) => {
+  const handleInputChange = (
+    field: keyof FormState,
+    value: FormState[keyof FormState]
+  ) => {
     setFormData(prev => {
       const next = { ...prev, [field]: value }
-      if (field === 'name' && !prev.subdomain) {
+      if (field === 'name' && typeof value === 'string' && !prev.subdomain) {
         next.subdomain = value.toLowerCase().replace(/[^a-z0-9]/g, '')
       }
       return next
@@ -156,8 +160,8 @@ export function NewClientForm() {
       setErrors(prev => ({ ...prev, logo: 'Formato no soportado (solo PNG, JPG, WEBP)' }))
       return
     }
-    if (file.size > 2 * 1024 * 1024) {
-      setErrors(prev => ({ ...prev, logo: 'La imagen excede los 2MB permitidos' }))
+    if (file.size > 10 * 1024 * 1024) {
+      setErrors(prev => ({ ...prev, logo: 'La imagen no puede superar 10MB' }))
       return
     }
 
@@ -169,19 +173,10 @@ export function NewClientForm() {
     setFormData(prev => ({ ...prev, logo_url: objectUrl }))
 
     try {
-      const supabase = createSupabaseClient()
-      const filename = `logos/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-      const { data, error } = await supabase.storage
-        .from('client-assets')
-        .upload(filename, file, { upsert: true })
+      // Usar la función helper para comprimir a WebP y subir
+      const publicUrl = await uploadImage(file, 'client-assets', 'logos')
 
-      if (error) throw error
-
-      const { data: urlData } = supabase.storage
-        .from('client-assets')
-        .getPublicUrl(filename)
-
-      setFormData(prev => ({ ...prev, logo_url: urlData.publicUrl }))
+      setFormData(prev => ({ ...prev, logo_url: publicUrl }))
     } catch (error) {
       console.error('Error uploading logo:', error)
       setErrors(prev => ({ ...prev, logo: 'Error al subir la imagen' }))
@@ -250,7 +245,7 @@ export function NewClientForm() {
         setGlobalError(data.error || 'Error desconocido')
         setLoading(false)
       }
-    } catch (error) {
+    } catch {
       setGlobalError('Error de red')
       setLoading(false)
     }
@@ -259,7 +254,12 @@ export function NewClientForm() {
   const inputClass = `w-full bg-[#040E16] border border-[#0A7B9E]/20 rounded-xl px-4 py-2.5 text-[#7BBFD6] text-sm focus:outline-none focus:border-[#0A7B9E]/50 transition-colors`
   const labelClass = `block text-xs font-semibold text-[#1E4D5C] uppercase tracking-wider mb-2`
 
-  const renderSection = (id: string, title: string, icon: any, content: React.ReactNode) => {
+  const renderSection = (
+    id: string,
+    title: string,
+    icon: React.ElementType,
+    content: React.ReactNode
+  ) => {
     const isOpen = activeSection === id
     const Icon = icon
     return (
@@ -349,12 +349,13 @@ export function NewClientForm() {
                   <>
                     <Upload size={24} className="text-[#4A8FA3] mb-2" />
                     <span className="text-sm text-[#7BBFD6]">Haz clic para subir un archivo</span>
-                    <span className="text-xs text-[#1E4D5C] mt-1">PNG, JPG, WEBP (Max 2MB)</span>
+                    <span className="text-xs text-[#1E4D5C] mt-1">PNG, JPG, WEBP (Max 10MB)</span>
                   </>
                 )}
                 {uploadingLogo && (
-                  <div className="absolute inset-0 bg-[#020F16]/80 flex items-center justify-center">
-                    <Loader2 size={24} className="text-[#0A7B9E] animate-spin" />
+                  <div className="absolute inset-0 bg-[#020F16]/80 flex flex-col items-center justify-center">
+                    <Loader2 size={24} className="text-[#0A7B9E] animate-spin mb-2" />
+                    <span className="text-xs text-[#7BBFD6] font-medium">Comprimiendo imagen...</span>
                   </div>
                 )}
                 {formData.logo_url && !uploadingLogo && (

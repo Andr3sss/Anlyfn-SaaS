@@ -71,9 +71,14 @@ export type ModuleKey = keyof typeof MODULE_CONFIG
 
 export const MODULE_KEYS = Object.keys(MODULE_CONFIG) as ModuleKey[]
 
+type ModuleStateSource =
+  | Partial<Record<ModuleKey, boolean>>
+  | Record<string, unknown>
+  | null
+
 // Calcula cuántos módulos están activos dado un objeto Module
 export function countActiveModules(
-  modules: Record<string, unknown> | null
+  modules: ModuleStateSource
 ): number {
   if (!modules) return 0
   return MODULE_KEYS.filter(k => modules[k] === true).length
@@ -81,7 +86,7 @@ export function countActiveModules(
 
 // Separa módulos activos e inactivos para renderizado
 export function splitModules(
-  modules: Record<string, unknown> | null
+  modules: ModuleStateSource
 ): { active: ModuleKey[]; inactive: ModuleKey[] } {
   if (!modules) return { active: [], inactive: MODULE_KEYS }
   const active = MODULE_KEYS.filter(k => modules[k] === true)

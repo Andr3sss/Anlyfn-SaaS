@@ -126,3 +126,6 @@ El esqueleto del SaaS admin está terminado:
 ✓ Activar/desactivar módulos (4C)
 ✓ Eliminar clientes (4D)
 
+Después de esto pasamos a Fase 5: el storefront.
+
+════════════════════════════════════════════════════════════════
