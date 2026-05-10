@@ -8,7 +8,7 @@ import {
   Upload, Check, AlertCircle, Loader2,
   Building2, Palette, Type, Globe,
   Share2, Search, Settings2, Puzzle,
-  ExternalLink, Lock,
+  ExternalLink, Lock, Trash2,
 } from 'lucide-react'
 import {
   FONT_OPTIONS, FONT_SIZE_OPTIONS, LETTER_SPACING_OPTIONS,
@@ -168,6 +168,8 @@ export function EditClientForm({ client }: { client: ClientWithModules }) {
   const [globalError, setGlobalError] = useState<string | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const logoInputRef = useRef<HTMLInputElement>(null)
 
   const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? 'localhost:3000'
@@ -273,6 +275,34 @@ export function EditClientForm({ client }: { client: ClientWithModules }) {
     }
   }
 
+  const handleDelete = async () => {
+    setDeleting(true)
+    setGlobalError(null)
+
+    try {
+      const res = await fetch(`/api/clients/${client.id}/delete`, {
+        method: 'DELETE'
+      })
+
+      if (res.ok) {
+        setIsDeleteDialogOpen(false)
+        // Redirigir después de 1s para permitir al usuario ver el estado de éxito (opcional, pero pedido en fase)
+        setTimeout(() => {
+          router.push('/admin')
+        }, 800)
+      } else {
+        const data = await res.json()
+        setGlobalError(data.error ?? 'Error al eliminar el cliente')
+        setIsDeleteDialogOpen(false)
+      }
+    } catch {
+      setGlobalError('Error de red al intentar eliminar')
+      setIsDeleteDialogOpen(false)
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   // ─── Shared styles ─────────────────────────────────────────────────────────
   const inputClass = `w-full bg-[#040E16] border border-[#0A7B9E]/20 rounded-xl px-4 py-2.5 text-[#7BBFD6] text-sm focus:outline-none focus:border-[#0A7B9E]/50 transition-colors`
   const labelClass = `block text-xs font-semibold text-[#1E4D5C] uppercase tracking-wider mb-2`
@@ -340,13 +370,21 @@ export function EditClientForm({ client }: { client: ClientWithModules }) {
             Ver storefront
           </a>
           <button
+            onClick={() => setIsDeleteDialogOpen(true)}
+            disabled={saving || deleting}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors border border-red-500/20"
+          >
+            <Trash2 size={13} />
+            Eliminar cliente
+          </button>
+          <button
             onClick={handleSave}
-            disabled={saving || saveSuccess}
+            disabled={saving || saveSuccess || deleting}
             className={`px-5 py-2 rounded-xl text-sm font-medium text-[#C8E8F0] border transition-all duration-200 flex items-center gap-2
               ${saveSuccess
                 ? 'bg-[#10B981] border-[#10B981]'
                 : 'bg-gradient-to-br from-[#0A7B9E] to-[#032D3B] border-[#0A7B9E]/40 hover:opacity-90'}
-              ${(saving || saveSuccess) ? 'opacity-80 cursor-not-allowed' : ''}
+              ${(saving || saveSuccess || deleting) ? 'opacity-80 cursor-not-allowed' : ''}
             `}
           >
             {saving
@@ -837,6 +875,53 @@ export function EditClientForm({ client }: { client: ClientWithModules }) {
         ))}
 
       </div>
+
+      {/* ── Modal de Confirmación de Borrado ── */}
+      {isDeleteDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div 
+            className="absolute inset-0 bg-[#020F16]/80 backdrop-blur-md" 
+            onClick={() => !deleting && setIsDeleteDialogOpen(false)}
+          />
+          <div className="relative w-full max-w-md bg-[#04121A] border border-red-500/20 rounded-3xl p-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 mb-6 border border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.1)]">
+                <AlertCircle size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-[#E8F6FA] mb-2 tracking-tight">
+                ¿Eliminar cliente?
+              </h3>
+              <p className="text-[#7BBFD6] text-sm leading-relaxed mb-8">
+                Esta acción es irreversible. Se eliminarán permanentemente todos los productos, módulos y configuraciones de <span className="font-bold text-red-400">{client.name}</span>.
+              </p>
+              
+              <div className="flex flex-col w-full gap-3">
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="w-full py-3.5 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-bold text-sm transition-all shadow-[0_4px_12px_rgba(239,68,68,0.2)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {deleting ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      Eliminando...
+                    </>
+                  ) : (
+                    'Sí, eliminar permanentemente'
+                  )}
+                </button>
+                <button
+                  onClick={() => setIsDeleteDialogOpen(false)}
+                  disabled={deleting}
+                  className="w-full py-3.5 rounded-2xl bg-transparent hover:bg-[#0A7B9E]/5 text-[#4A8FA3] hover:text-[#7BBFD6] font-semibold text-sm transition-all disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

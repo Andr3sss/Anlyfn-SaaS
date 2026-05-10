@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk '{print $NF}')",
+      "Bash(New-Item -ItemType Directory -Path \"c:\\\\Users\\\\andr3\\\\.gemini\\\\antigravity\\\\scratch\\\\SaaS\\\\src\\\\app\\\\api\\\\clients\\\\[id]\" -Force)",
+      "Bash(Out-Null)",
+      "Bash(mkdir -p \"c:/Users/andr3/.gemini/antigravity/scratch/SaaS/src/app/api/clients/[id]\")",
+      "Bash(npm run *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\andr3\\.gemini\\antigravity\\scratch\\SaaS\\src\\app\\api\\clients"
+    ]
+  }
+}
